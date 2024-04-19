@@ -58,7 +58,7 @@ def get_board_bg(proba):
             [board["walls"], (rotate_around_point(quarter["walls"], rot[i] * 90))]
         )
         for name, xy in quarter["goals"].items():
-            board["goals"][name] = rotate_around_point(xy, i * 90)
+            board["goals"][name] = rotate_around_point(xy, rot[i] * 90)
     board["walls"] = board["walls"].tolist()
     for name, xy in board["goals"].items():
         board["goals"][name] = xy.tolist()

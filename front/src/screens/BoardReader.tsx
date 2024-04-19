@@ -1,57 +1,88 @@
-import { Camera, CameraType, takePictureAsync } from 'expo-camera';
+import { CameraPreview } from '../components/Camera';
 import React, { useState } from 'react';
-import { Button, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions, Image } from 'react-native';
+import { Button, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Image } from 'expo-image';
 import { manipulateAsync, FlipType, SaveFormat } from 'expo-image-manipulator';
+import * as FileSystem from 'expo-file-system';
+import { BoardRenderer } from '../components/BoardRenderer';
 
 const BoardReader = () => {
-    const [image, setImage] = useState(null);
     const [solution, setSolution] = useState(null);
-    const [camera, setCamera] = useState(null);
-    const [cameraReady, setCameraReady] = useState(false);
-    const [permission, requestPermission] = Camera.useCameraPermissions();
+    const [board, setBoard] = useState(null);
+    const [picture, setPicture] = useState(null);
     const { height, width } = useWindowDimensions();
+    const [currentGoal, setGoal] = useState(null);
 
-    if (!permission) return <View />;
-
-    if (!permission.granted) {
-        return (
-            <View style={styles.container}>
-                <Text>No access to camera</Text>
-                <Button title="Request Permissions" onPress={requestPermission} />
-            </View>
-        );
+    const onTakePicture = async () => {
+        setPicture(null);
+        setGoal(null);
+        setSolution(null);
+        setBoard(null);
     }
 
-    async function takePicture() {
-        if (camera) {
-            const picture = await camera.takePictureAsync({ onPictureSaved: this.onPictureSaved });
-            console.log(picture);
-            const manipResult = await manipulateAsync(
-                picture.uri,
-                [{
-                    crop: {
-                        originX: Math.floor(picture.width * 0.1),
-                        originY: Math.floor(picture.height * 0.1),
-                        height: Math.floor(picture.height * 0.8),
-                        width: Math.floor(picture.width * 0.8)
-                    }
-                }],
-                { compress: 1, format: SaveFormat.PNG }
-            );
-            console.log(manipResult);
-            setImage(manipResult);
+    const onPictureSaved = async (picture) => {
+        try {
+            setPicture(picture);
+            const response = await FileSystem.uploadAsync('http://192.168.135.165:5000/read', picture.uri, {
+                httpMethod: 'POST',
+                uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+                fieldName: 'file'
+            });
+            const data = JSON.parse(response.body);
+            setBoard(data.board);
+        }
+        catch (error) {
+            console.error(error);
+        }
+    };
+
+    const solve = async () => {
+        const colors = {
+            "r": "red",
+            "g": "green",
+            "b": "blue",
+            "y": "yellow",
+            "m": "red"
+        }
+        const response = await fetch('http://192.168.135.165:5000/solve', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                board: board,
+                goal: board["goals"][currentGoal],
+                robot: colors[currentGoal[0]],
+            }),
+        });
+        const data = await response.json();
+        const { uri } = await FileSystem.downloadAsync('http://192.168.135.165:5000/solution/' + data.solution_id, FileSystem.documentDirectory + 'solution.gif');
+        setSolution({ uri: uri });
+
+    };
+
+    const getStatus = () => {
+        if (picture && !board) {
+            return (<Text>{"Analyzing"}</Text>);
+        } else if (board && !currentGoal) {
+            return (<Text>{"Select a goal"}</Text>);
+        } else if (board && currentGoal && !solution) {
+            return (<Button title={"Solve"} onPress={solve}></Button>);
+        }
+        else {
+            return (<View></View>);
         }
     }
     return (
         <View style={styles.container}>
-            <Camera style={[styles.camera, {width: width, height: width}]} type={CameraType.back} ref={(ref) => {setCamera(ref)}} ratio={"1:1"} onCameraReady={() => setCameraReady(true)}>
-                <View style={[styles.cropBox, { height: width * 0.8 }]}></View>
-            </Camera>
-            <View style={styles.solution}>
-                {solution && (<Image style={styles.solution} source={solution}></Image>)}
+            <CameraPreview onTakePicture={onTakePicture} onPictureSaved={onPictureSaved} />
+            <View style={styles.status}>{getStatus()}</View>
+            <View style={styles.solutionContainer}>
+                {!solution && board && (<BoardRenderer board={board} currentGoal={currentGoal} setGoal={setGoal} />)}
+                {!board && picture && (<Image style={styles.solution} source={picture} contentFit={"contain"}></Image>)}
+                {solution && (<Image style={styles.solution} source={solution} contentFit={"contain"}></Image>)}
             </View>
-            <TouchableOpacity style={styles.button} onPress={takePicture}>
-            </TouchableOpacity>
+
         </View>
     );
 };
@@ -59,7 +90,8 @@ const BoardReader = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
+        justifyContent: 'space-between',
+        ...StyleSheet.absoluteFill,
     },
     camera: {
         justifyContent: 'center',
@@ -77,12 +109,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
         margin: 64,
     },
-    button: {
-        flex: 1,
-        alignSelf: 'flex-end',
-        alignItems: 'center',
-        backgroundColor: 'black',
-    },
     text: {
         fontSize: 24,
         color: 'white',
@@ -92,8 +118,23 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: 'red',
     },
+    solutionContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     solution: {
-    }
+        flex: 1,
+        width: '80%',
+        height: '100%',
+        resizeMode: 'contain',
+    },
+    status: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: 40,
+        width: '100%',
+    },
 });
 
 export { BoardReader };

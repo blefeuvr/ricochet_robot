@@ -183,10 +183,11 @@ def solve_case(
 
 
 def full_solve(walls, start_state, goal_robot_name, goal):
-    """Solves the board by calling solve_case many times with different paramters.
+    """Solves the board by calling solve_case many times with different parameters.
     1. only move the goal robot
     2. solve with all robots, low blacklist depth
     3. solve with all robots, high blacklist depth"""
+    cache_wall_extremes(walls)
 
     print("Trying to only move main robot")
     result = solve_case(

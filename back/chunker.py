@@ -71,30 +71,15 @@ def classify_lines(lines):
     Classify lines to horizontal and vertical, filter outliers
     The median angle for each direction is calculated and only lines within a threshold angle are kept
     """
-    threshold = 360 / 32
-    thetas = (
-        np.rad2deg(np.arctan2(lines[:, 1] - lines[:, 3], lines[:, 0] - lines[:, 2]))
-        + 225
-    ) % 180
-    mask = thetas < 90
-
-    h_median = np.median(thetas[mask])
-    h_mask = np.logical_and(
-        mask,
-        np.logical_or(
-            np.abs(thetas - h_median) < threshold,
-            np.abs((thetas + 360 / 2) % 360 - h_median) < threshold,
-        ),
-    )
-
-    v_median = np.median(thetas[~mask])
-    v_mask = np.logical_and(
-        ~mask,
-        np.logical_or(
-            np.abs(thetas - v_median) < threshold,
-            np.abs((thetas + 360 / 2) % 360 - v_median) < threshold,
-        ),
-    )
+    threshold = 360 / 16
+    thetas = ((
+        np.rad2deg(np.arctan2(lines[:, 1] - lines[:, 3], lines[:, 0] - lines[:, 2])) + 45
+        + 180
+    ) % 180)
+    h_median = 45
+    h_mask = np.abs(thetas - h_median) < threshold
+    v_median = 135
+    v_mask = np.abs(thetas - v_median) < threshold
     h_lines = lines[h_mask]
     v_lines = lines[v_mask]
     return h_lines, v_lines
