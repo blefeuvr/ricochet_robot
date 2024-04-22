@@ -2,7 +2,7 @@ from configs import DATA_PATH
 from board_builder import get_quarters, get_robots, build_board
 from chunk_classifier import predict_chunks
 from robot_classifier import predict_robots
-from chunker import get_chunks
+from chunker import get_chunks, get_square
 from bash_render  import print_board
 import numpy as np
 from solver import full_solve
@@ -38,7 +38,8 @@ def test_quarters():
         if "quarters" not in data:
             continue
         img = cv2.imread(str(DATA_PATH / "input" / img_path))
-        chunks, projected = get_chunks(img, return_projected=True)
+        projected = get_square(img)
+        chunks = get_chunks(projected)
         proba = predict_chunks(chunks).reshape((16, 16, 4))
         quarters = get_quarters(proba)
         assert quarters == data["quarters"]

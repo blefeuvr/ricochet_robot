@@ -16,7 +16,7 @@ def random_string(y):
     return "".join(np.random.choice(list(string.ascii_letters), y, replace=True))
 
 
-def image_resize(img, height=1000):
+def image_resize(img, height=1024):
     """Resize image to same normalized area (height**2)"""
     pixels = height * height
     shape = list(np.shape(img))
@@ -24,8 +24,7 @@ def image_resize(img, height=1000):
     shape[0] *= scale
     shape[1] *= scale
     img = cv2.resize(img, (int(shape[1]), int(shape[0])))
-    img_shape = np.shape(img)
-    return img, img_shape, scale
+    return img
 
 
 def get_intersect(a1, a2, b1, b2):
@@ -133,25 +132,22 @@ def resample(arr, N):
     return np.array(A)
 
 
-def get_chunks(img, return_projected=False):
+def get_square(img):
     """
     Split reprojection into 64 chunks
     """
-    img, img_shape, scale = image_resize(img, height=1000)
-    # plt.imshow(img)
+    img = image_resize(img, height=1024)
     lines = get_lines(img)
     h_lines, v_lines = classify_lines(lines)
-    # for x1, y1, x2, y2 in lines:
-    #     plt.plot([x1, x2], [y1, y2], "-", color="red")
-    # for x1, y1, x2, y2 in lines:
-    #     plt.plot([x1, x2], [y1, y2], "-", color="blue")
     corners = get_corners(img, h_lines, v_lines)
-    # plt.plot(corners[:, 0], corners[:, 1], "o", markersize=5, color="orange")
     reprojected = reproject_image(img, corners)
-    # plt.imshow(reprojected[:, :, ::-1])
-    chunks = resample(reprojected, 64)
-    if return_projected:
-        return chunks, reprojected
+    cropped = reprojected[12:-12, 12:-12, :]
+    cropped = image_resize(cropped, height=1024)
+    return cropped
+
+
+def get_chunks(img):
+    chunks = resample(img, 64)
     return chunks
 
 
@@ -206,7 +202,8 @@ def main():
     imgs_path = list((DATA_PATH / "input").glob("*.jpg"))
     for i, img_path in enumerate(imgs_path):
         img = cv2.imread(str(img_path))
-        chunks = get_chunks(img)
+        reprojected = get_square(img)
+        chunks = get_chunks(reprojected)
         for chunk in chunks:
             hash = hashlib.md5(chunk.tobytes()).hexdigest()
             cv2.imwrite(str(DATA_PATH / "chunks" / f"{hash}.jpg"), chunk)

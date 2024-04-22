@@ -14,6 +14,7 @@ import cv2
 import pandas as pd
 import pickle
 from configs import DATA_PATH
+import albumentations as A
 
 
 def learn():
@@ -27,9 +28,16 @@ def learn():
     X = []
     y = []
 
+    transform = A.Compose([
+        A.ColorJitter(p=0.5, hue=(0, 0.05)),
+        A.RandomGamma(p=0.5),
+        A.Blur(p=0.5),
+        A.RandomRotate90(p=0.5),
+    ])
+
     for i, label_path in enumerate(labels_path):
-        for chunk in label_path.glob("*.jpg"):
-            img = cv2.imread(str(chunk))
+        for chunk in label_path.glob("*"):
+            img = transform(image=cv2.imread(str(chunk)))["image"]
             X.append(img.flatten())
             y.append(i)
 
@@ -60,7 +68,7 @@ def predict_robots(chunks):
     """
     Predict the labels of the chunks
     """
-    X = [chunk.flatten() for chunk in chunks]
+    X = np.array([chunk.flatten() for chunk in chunks])
 
     model = pickle.load(open("models/robot_model.pkl", "rb"))
 

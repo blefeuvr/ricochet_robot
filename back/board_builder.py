@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from chunker import get_chunks, resample
+from chunker import get_chunks, resample, get_square
 import cv2
 from configs import QUARTERS, DATA_PATH
 from chunk_classifier import predict_chunks
@@ -80,7 +80,8 @@ def get_robots(chunks, proba):
 
 
 def build_board(img):
-    chunks, projected = get_chunks(img, return_projected=True)
+    projected = get_square(img)
+    chunks = get_chunks(projected)
     proba = predict_chunks(chunks).reshape((16, 16, 4))
     board = get_board_bg(proba)
     robots = get_robots(chunks.reshape((16, 16, 64, 64, 3)), proba[:, :, 3])

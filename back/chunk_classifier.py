@@ -14,6 +14,7 @@ import cv2
 import pandas as pd
 import pickle
 from configs import DATA_PATH
+import albumentations as A
 
 
 def learn():
@@ -27,11 +28,19 @@ def learn():
     X = []
     y = []
 
+    transform = A.Compose([
+        A.ColorJitter(p=0.5, hue=(0, 0.05)),
+        A.RandomGamma(p=0.5),
+        A.Blur(p=0.5),
+        A.RandomRotate90(p=0.5),
+    ])
+
     for i, label_path in enumerate(labels_path):
-        for chunk in label_path.glob("*.jpg"):
-            img = cv2.imread(str(chunk))
+        for chunk in label_path.glob("*.png"):
+            img = transform(image=cv2.imread(str(chunk)))["image"]
             X.append(img.flatten())
             y.append(i)
+
 
     X = np.array(X)
     y = np.array(y)
@@ -58,7 +67,12 @@ def learn():
     # disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
     # disp.plot()
     # plt.show()
-
+    transform = A.Compose([
+        A.ColorJitter(p=0.5, hue=(0, 0.05)),
+        A.RandomGamma(p=0.5),
+        A.Blur(p=0.5),
+        A.RandomRotate90(p=0.5),
+    ])
 
 def predict_chunks(chunks):
     """
@@ -81,6 +95,15 @@ def show_predictions(y_pred):
     plt.imshow(y_pred[:, :, 2])
     plt.subplot(224)
     plt.imshow(y_pred[:, :, 3])
+
+
+def sort():
+    imgs_paths = list((DATA_PATH / "chunks").glob("*"))
+    imgs = [cv2.imread(str(img_path)) for img_path in imgs_paths]
+    preds = predict_chunks(imgs)
+    labels = np.array(["center", "empty", "goal", "robot"])[np.argmax(preds, axis=1)]
+    for i in range(len(labels)):
+        imgs_paths[i].rename(DATA_PATH / "sorted_chunks" / labels[i] / imgs_paths[i].name)
 
 
 if __name__ == "__main__":

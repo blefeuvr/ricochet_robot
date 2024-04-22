@@ -23,7 +23,7 @@ const BoardReader = () => {
     const onPictureSaved = async (picture) => {
         try {
             setPicture(picture);
-            const response = await FileSystem.uploadAsync('http://192.168.135.165:5000/read', picture.uri, {
+            const response = await FileSystem.uploadAsync('http://192.168.0.16:5000/read', picture.uri, {
                 httpMethod: 'POST',
                 uploadType: FileSystem.FileSystemUploadType.MULTIPART,
                 fieldName: 'file'
@@ -44,7 +44,7 @@ const BoardReader = () => {
             "y": "yellow",
             "m": "red"
         }
-        const response = await fetch('http://192.168.135.165:5000/solve', {
+        const response = await fetch('http://192.168.0.16:5000/solve', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
