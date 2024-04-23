@@ -23,7 +23,7 @@ const BoardReader = () => {
     const onPictureSaved = async (picture) => {
         try {
             setPicture(picture);
-            const response = await FileSystem.uploadAsync('http://192.168.0.16:5000/read', picture.uri, {
+            const response = await FileSystem.uploadAsync('http://blefeuvr.fr:5000/read', picture.uri, {
                 httpMethod: 'POST',
                 uploadType: FileSystem.FileSystemUploadType.MULTIPART,
                 fieldName: 'file'
@@ -44,7 +44,7 @@ const BoardReader = () => {
             "y": "yellow",
             "m": "red"
         }
-        const response = await fetch('http://192.168.0.16:5000/solve', {
+        const response = await fetch('http://blefeuvr.fr:5000/solve', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ const BoardReader = () => {
             }),
         });
         const data = await response.json();
-        const { uri } = await FileSystem.downloadAsync('http://192.168.135.165:5000/solution/' + data.solution_id, FileSystem.documentDirectory + 'solution.gif');
+        const { uri } = await FileSystem.downloadAsync('http://blefeuvr.fr:5000/solution/' + data.solution_id, FileSystem.documentDirectory + 'solution.gif');
         setSolution({ uri: uri });
 
     };
