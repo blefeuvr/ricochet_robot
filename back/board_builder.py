@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from chunker import get_chunks, resample, get_square
-import cv2
 from configs import QUARTERS, DATA_PATH
 from chunk_classifier import predict_chunks
 from robot_classifier import predict_robots
