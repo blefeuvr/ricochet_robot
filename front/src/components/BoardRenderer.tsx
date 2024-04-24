@@ -6,7 +6,7 @@ import { manipulateAsync, FlipType, SaveFormat } from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system';
 import { Svg, Defs, Pattern, Path, Rect, Ellipse, Line, G } from 'react-native-svg';
 
-const BoardRenderer = ({ board, currentGoal, setGoal }) => {
+const BoardRenderer = ({ board, currentGoal, setGoal = () => { }, solution = [] }) => {
     const chunkSize = 32;
     const { walls, robots, goals = null } = board;
     const wall = walls[0];
@@ -71,6 +71,13 @@ const BoardRenderer = ({ board, currentGoal, setGoal }) => {
         );
     }
 
+    const renderMove = (move, idx) => {
+        const [color, a, b] = move;
+        return (
+            <Line key={idx} x1={chunkSize/2 + chunkSize * a[1]} y1={chunkSize/2 + chunkSize * a[0]} x2={chunkSize/2 + chunkSize * b[1]} y2={chunkSize/2 + chunkSize * b[0]} stroke={color} strokeWidth="5" />
+        )
+    }
+
 
     return (
         <View style={styles.container}>
@@ -88,9 +95,10 @@ const BoardRenderer = ({ board, currentGoal, setGoal }) => {
                 </Defs>
                 {Object.entries(robots).map(renderRobot)}
                 {walls.map(renderWall)}
-                <Rect fill="url(#grid)" x="0" y="0" width="512" height="512"/>
+                <Rect fill="url(#grid)" x="0" y="0" width="512" height="512" />
                 <Path d="M 0 0 L 512 0 512 512 0 512 0 0" fill="none" stroke="black" strokeWidth="5" onPress={() => setGoal(null)} />
                 {Object.entries(goals).map(renderGoal)}
+                {solution.map(renderMove)}
             </Svg>
         </View>
     );

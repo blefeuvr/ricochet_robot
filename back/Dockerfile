@@ -9,4 +9,4 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "api:app"]
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "api:app", "--certfile", "/etc/letsencrypt/live/blefeuvr.fr/fullchain.pem", "--keyfile", "/etc/letsencrypt/live/blefeuvr.fr/privkey.pem"]

@@ -1,22 +1,19 @@
-from configs import DATA_PATH
-from board_builder import get_quarters, get_robots, build_board
-from chunk_classifier import predict_chunks
-from robot_classifier import predict_robots
-from chunker import get_chunks, get_square
-from bash_render  import print_board
+import cv2
 import numpy as np
-from solver import full_solve
-from bash_render import print_path
-from img_render import render_board, render_path
-from matplotlib import pyplot as plt
 import requests
 
-import cv2
+from bash_render import print_board, print_path
+from board_builder import build_board, get_quarters, get_robots, get_square, resample, clean_solution
+from chunk_classifier import predict_chunks
+from configs import DATA_PATH, CHUNK_SIZE
+from img_render import render_board, render_path
+from solver import full_solve
 
 DATA = {
     "20240415_102619.jpg": {
         "quarters": [0, 6, 5, 3],
         "robots": {"red": [3, 7], "green": [4, 12], "yellow": [6, 4], "blue": [12, 2]},
+        "solutions": [("yellow", (8, 5), [('yellow', (8, 5), (6, 5)), ('yellow', (6, 5), [6, 4])])],
     },
     "20240415_102648.jpg": {
         "quarters": [3, 5, 6, 0],
@@ -29,7 +26,7 @@ DATA = {
     "20240415_165840.jpg": {
         "quarters": [0, 2, 6, 4],
         "robots": {"yellow": [3, 11], "green": [1, 9], "blue": [2, 5], "red": [10, 10]},
-    }
+    },
 }
 
 
@@ -39,7 +36,7 @@ def test_quarters():
             continue
         img = cv2.imread(str(DATA_PATH / "input" / img_path))
         projected = get_square(img)
-        chunks = get_chunks(projected)
+        chunks = resample(projected, CHUNK_SIZE)
         proba = predict_chunks(chunks).reshape((16, 16, 4))
         quarters = get_quarters(proba)
         assert quarters == data["quarters"]
@@ -50,47 +47,22 @@ def test_robots():
         if "robots" not in data:
             continue
         img = cv2.imread(str(DATA_PATH / "input" / img_path))
-        chunks, projected = get_chunks(img, return_projected=True)
+        projected = get_square(img)
+        chunks = resample(projected, CHUNK_SIZE)
         proba = predict_chunks(chunks).reshape((16, 16, 4))
         robots = get_robots(chunks.reshape((16, 16, 64, 64, 3)), proba[:, :, 3])
         for color in data["robots"]:
             assert robots[color] == data["robots"][color]
 
 
-def test_api():
-    img_path = str(DATA_PATH / "input/20240415_102658.jpg")
-    url = 'http://127.0.0.1:5000/im_size'
-    img = {'image': open(img_path, 'rb')}
-    r = requests.post(url, files=img)
-
-    assert r.json() == {'msg': 'success', 'size': [1807, 1807]}, r.json()
-
-
-def test_api_solve():
-    img_path = str(DATA_PATH / "input/20240415_102658.jpg")
-    url = 'http://127.0.0.1:5000/solve'
-    img = {'image': open(img_path, 'rb')}
-    r = requests.post(url, files=img, stream=True)
-
-    with open("output.gif", "wb") as f:
-        f.write(r.content)
-
-    assert r.json() == {'msg': 'success', 'size': [1807, 1807]}, r.json()
-
-
-if __name__ == "__main__":
-    img_paths = list((DATA_PATH / "input").glob("*.jpg"))
-    img_path = str(np.random.choice(img_paths))
-    print(img_path)
-    img = cv2.imread(img_path)
-    board = build_board(img)
-    
-    print_board(board["robots"], board["walls"])
-    img = render_board(board["robots"], board["walls"], (1, 3))
-
-    state = {"robots": board["robots"], "cost": 0, "prev_state": None}
-    winning_state = full_solve(board["walls"], state, "green", (1, 3))
-    print_path(board["walls"], winning_state, "green", (1, 3))
-    gif = render_path(board["walls"], winning_state, "green", (1, 3))
-    with open("output.gif", "wb") as f:
-        f.write(gif.getbuffer())
+def test_clean_solution():
+    for img_path, data in DATA.items():
+        if "solutions" not in data:
+            continue
+        img = cv2.imread(str(DATA_PATH / "input" / img_path))
+        board = build_board(img)
+        for robot, goal, solution in data["solutions"]:
+            state = {"robots": board["robots"], "cost": 0, "prev_state": None}
+            winning_state = full_solve(board["walls"], state, robot, goal)
+            board, moves = clean_solution(board, winning_state)
+            assert moves == solution

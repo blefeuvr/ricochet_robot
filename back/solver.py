@@ -1,8 +1,8 @@
-from collections import deque, defaultdict
-import math, time
-from bash_render import print_board
-from configs import *
-from bash_render import print_path
+import math
+import time
+from collections import defaultdict, deque
+
+from configs import BOARD_SIZE, DEBUG
 
 # State Vector
 # dict(robots=dict(color=(x,y), cost=0, prev_state=None))
@@ -122,7 +122,6 @@ def get_robot_moves(robot_name, state, walls):
 def win(state, robot_name, goal):
     """Checks if the current state wins"""
     return state["robots"][robot_name] == goal
-
 
 
 def solve_case(
@@ -263,22 +262,6 @@ def full_solve(walls, start_state, goal_robot_name, goal):
     return None
 
 
-def test_solve_case():
-
-    # cache_wall_extremes()
-    goal = default_goal
-    robot_name = default_robot
-    state = {"robots": starting_robots, "cost": 0, "prev_state": None}
-
-    winning_state = solve_case(state, robot_name, goal, blacklist_limit=2000)
-    if winning_state is not None:
-        print_path(winning_state, robot_name, goal)
-        print("we won huzzah!")
-    else:
-        print_path(state, robot_name, goal)
-        print("did not win")
-
-
 def test_get_robot_moves():
     robot_name = "red"
     walls = [(3.5, 1)]
@@ -287,7 +270,6 @@ def test_get_robot_moves():
     res = get_robot_moves(robot_name, state, walls=walls)
     assert res == ((1, 2), (1, 0), (3, 1), (0, 1)), "got {}".format(res)
     print("robot move still works ;)")
-
 
 
 # def test_full_solve():

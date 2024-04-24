@@ -8,28 +8,38 @@ import { BoardRenderer } from '../components/BoardRenderer';
 
 const BoardReader = () => {
     const [solution, setSolution] = useState(null);
+    const [error, setError] = useState(null);
     const [board, setBoard] = useState(null);
     const [picture, setPicture] = useState(null);
-    const { height, width } = useWindowDimensions();
     const [currentGoal, setGoal] = useState(null);
+    const [status, setStatus] = useState("start");
+    const { height, width } = useWindowDimensions();
 
     const onTakePicture = async () => {
         setPicture(null);
         setGoal(null);
         setSolution(null);
         setBoard(null);
+        setError(null);
+        setStatus("analyzing");
     }
 
     const onPictureSaved = async (picture) => {
         try {
             setPicture(picture);
-            const response = await FileSystem.uploadAsync('http://blefeuvr.fr:5000/read', picture.uri, {
+            const response = await FileSystem.uploadAsync('https://blefeuvr.fr:5000/read', picture.uri, {
                 httpMethod: 'POST',
                 uploadType: FileSystem.FileSystemUploadType.MULTIPART,
                 fieldName: 'file'
             });
             const data = JSON.parse(response.body);
-            setBoard(data.board);
+            if (data.msg == "error") {
+                setError(data.error);
+                setStatus("error");
+            } else {
+                setStatus("waitingGoal");
+                setBoard(data.board);
+            }
         }
         catch (error) {
             console.error(error);
@@ -37,6 +47,7 @@ const BoardReader = () => {
     };
 
     const solve = async () => {
+        setStatus("solving");
         const colors = {
             "r": "red",
             "g": "green",
@@ -44,7 +55,7 @@ const BoardReader = () => {
             "y": "yellow",
             "m": "red"
         }
-        const response = await fetch('http://blefeuvr.fr:5000/solve', {
+        const response = await fetch('https://blefeuvr.fr:5000/solve', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -56,23 +67,30 @@ const BoardReader = () => {
             }),
         });
         const data = await response.json();
-        const { uri } = await FileSystem.downloadAsync('http://blefeuvr.fr:5000/solution/' + data.solution_id, FileSystem.documentDirectory + 'solution.gif');
-        setSolution({ uri: uri });
-
+        setBoard(data.board);
+        console.log(data.board["robots"]);
+        setSolution(data.moves);
+        setStatus("done");
     };
 
     const getStatus = () => {
-        if (picture && !board) {
-            return (<Text>{"Analyzing"}</Text>);
-        } else if (board && !currentGoal) {
-            return (<Text>{"Select a goal"}</Text>);
-        } else if (board && currentGoal && !solution) {
-            return (<Button title={"Solve"} onPress={solve}></Button>);
-        }
-        else {
+        if (status == "start") {
             return (<View></View>);
+        } else if (status == "analyzing") {
+            return (<Text>{"Analyzing..."}</Text>);
+        } else if (status == "error") {
+            return (<Text>{"Failed to analyze, please take again"}</Text>);
+        } else if (status == "waitingGoal" && !currentGoal) {
+            return (<Text>{"Select a goal"}</Text>);
+        } else if (status == "waitingGoal") {
+            return (<Button title={"Solve"} onPress={solve}></Button>);
+        } else if (status == "solving") {
+            return (<Text>{"Solving..."}</Text>);
+        } else if (status == "done") {
+            return (<Text>{`Done in ${solution.length} moves`}</Text>);
         }
     }
+
     return (
         <View style={styles.container}>
             <CameraPreview onTakePicture={onTakePicture} onPictureSaved={onPictureSaved} />
@@ -80,7 +98,7 @@ const BoardReader = () => {
             <View style={styles.solutionContainer}>
                 {!solution && board && (<BoardRenderer board={board} currentGoal={currentGoal} setGoal={setGoal} />)}
                 {!board && picture && (<Image style={styles.solution} source={picture} contentFit={"contain"}></Image>)}
-                {solution && (<Image style={styles.solution} source={solution} contentFit={"contain"}></Image>)}
+                {solution && (<BoardRenderer board={board} currentGoal={currentGoal} solution={solution} />)}
             </View>
 
         </View>

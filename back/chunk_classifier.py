@@ -1,18 +1,17 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import os
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-from sklearn import svm
-from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import classification_report
-from pathlib import Path
-import cv2
-import pandas as pd
 import pickle
-from configs import DATA_PATH
+
 import albumentations as A
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from sklearn import svm
+from sklearn.metrics import (
+    accuracy_score,
+)
+from sklearn.model_selection import train_test_split
+
+from configs import DATA_PATH
 
 
 def learn():
@@ -26,19 +25,20 @@ def learn():
     X = []
     y = []
 
-    transform = A.Compose([
-        A.ColorJitter(p=0.5, hue=(0, 0.05)),
-        A.RandomGamma(p=0.5),
-        A.Blur(p=0.5),
-        A.RandomRotate90(p=0.5),
-    ])
+    transform = A.Compose(
+        [
+            A.ColorJitter(p=0.5, hue=(0, 0.05)),
+            A.RandomGamma(p=0.5),
+            A.Blur(p=0.5),
+            A.RandomRotate90(p=0.5),
+        ]
+    )
 
     for i, label_path in enumerate(labels_path):
         for chunk in label_path.glob("*.png"):
             img = transform(image=cv2.imread(str(chunk)))["image"]
             X.append(img.flatten())
             y.append(i)
-
 
     X = np.array(X)
     y = np.array(y)
@@ -65,12 +65,15 @@ def learn():
     # disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
     # disp.plot()
     # plt.show()
-    transform = A.Compose([
-        A.ColorJitter(p=0.5, hue=(0, 0.05)),
-        A.RandomGamma(p=0.5),
-        A.Blur(p=0.5),
-        A.RandomRotate90(p=0.5),
-    ])
+    transform = A.Compose(
+        [
+            A.ColorJitter(p=0.5, hue=(0, 0.05)),
+            A.RandomGamma(p=0.5),
+            A.Blur(p=0.5),
+            A.RandomRotate90(p=0.5),
+        ]
+    )
+
 
 def predict_chunks(chunks):
     """
@@ -101,7 +104,9 @@ def sort():
     preds = predict_chunks(imgs)
     labels = np.array(["center", "empty", "goal", "robot"])[np.argmax(preds, axis=1)]
     for i in range(len(labels)):
-        imgs_paths[i].rename(DATA_PATH / "sorted_chunks" / labels[i] / imgs_paths[i].name)
+        imgs_paths[i].rename(
+            DATA_PATH / "sorted_chunks" / labels[i] / imgs_paths[i].name
+        )
 
 
 if __name__ == "__main__":

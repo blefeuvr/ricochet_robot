@@ -1,10 +1,11 @@
-from configs import BOARD_SIZE
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import colors
-import imageio.v3 as iio
 import io
+
 import cv2 as cv
+import imageio.v3 as iio
+import numpy as np
+from matplotlib import colors
+
+from configs import BOARD_SIZE
 
 CHUNK_SIZE = 32
 
@@ -27,7 +28,7 @@ def render_robot(color):
     """Print a robot"""
     chunk = np.full((CHUNK_SIZE, CHUNK_SIZE, 3), 255, np.uint8)
     cv_color = np.array(colors.to_rgb(color)) * 255
-    cv.circle(chunk, (CHUNK_SIZE//2, CHUNK_SIZE//2), CHUNK_SIZE//3, cv_color, -1)
+    cv.circle(chunk, (CHUNK_SIZE // 2, CHUNK_SIZE // 2), CHUNK_SIZE // 3, cv_color, -1)
     return chunk
 
 
@@ -74,11 +75,15 @@ def render_board(robots, walls, goal=None):
     # add goal
     if goal is not None:
         x, y = goal
-        board[CHUNK_SIZE*x:CHUNK_SIZE*(x+1), CHUNK_SIZE*y:CHUNK_SIZE*(y+1)] = render_goal("grey")
+        board[
+            CHUNK_SIZE * x : CHUNK_SIZE * (x + 1), CHUNK_SIZE * y : CHUNK_SIZE * (y + 1)
+        ] = render_goal("grey")
 
     # add robots
     for name, (x, y) in robots.items():
-        board[CHUNK_SIZE*x:CHUNK_SIZE*(x+1), CHUNK_SIZE*y:CHUNK_SIZE*(y+1)] = render_robot(name)
+        board[
+            CHUNK_SIZE * x : CHUNK_SIZE * (x + 1), CHUNK_SIZE * y : CHUNK_SIZE * (y + 1)
+        ] = render_robot(name)
 
     render_grid(board)
 
