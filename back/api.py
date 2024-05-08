@@ -28,12 +28,12 @@ def process_image():
 
 @app.route("/read", methods=["POST"])
 def read_board():
-    # file = request.files["file"]
-    # img = np.array(Image.open(file.stream))[:, :, ::-1]
+    file = request.files["file"]
+    img = np.array(Image.open(file.stream))[:, :, ::-1]
 
-    # cv2.imwrite(f"./pictures/{random_string(6)}.png", img)
+    cv2.imwrite(f"./pictures/{random_string(6)}.png", img)
 
-    img = cv2.imread("./data/input/20240415_102619.jpg")
+    # img = cv2.imread("./data/input/20240415_102619.jpg")
 
     try:
         board = build_board(img)
