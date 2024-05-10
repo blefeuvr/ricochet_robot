@@ -107,9 +107,8 @@ const BoardReader = () => {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        justifyContent: 'space-between',
         ...StyleSheet.absoluteFill,
+        flex: 1,
     },
     camera: {
         justifyContent: 'center',

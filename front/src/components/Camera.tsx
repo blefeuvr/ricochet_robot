@@ -1,5 +1,5 @@
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Button,
   StyleSheet,
@@ -16,18 +16,25 @@ const CameraPreview = ({ onTakePicture, onPictureSaved }) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [camera, setCamera] = useState(null);
   const [cameraReady, setCameraReady] = useState(false);
+  const [pictureSize, setPictureSize] = useState(null);
   const { height, width } = useWindowDimensions();
 
-  if (!permission) return <View />;
-
-  if (!permission.granted) {
-    return (
-      <View style={[styles.placeHolder, { width: width, height: width }]}>
-        <Text>No access to camera</Text>
-        <Button title="Request Permissions" onPress={requestPermission} />
-      </View>
-    );
-  }
+  useEffect(() => {
+    const getPictureSize = async () => {
+      const pictureSizes = await camera.getAvailablePictureSizesAsync();
+      const squareSizes = pictureSizes
+        .filter((size) => {
+          const [width, height] = size.split("x");
+          return width == height;
+        })
+        .sort();
+      setPictureSize(squareSizes[squareSizes.length - 1]);
+      console.log(squareSizes[squareSizes.length - 1]);
+    };
+    if (camera) {
+        getPictureSize();
+    }
+  }, [camera]);
 
   async function takePicture() {
     onTakePicture();
@@ -52,24 +59,63 @@ const CameraPreview = ({ onTakePicture, onPictureSaved }) => {
     }
   }
 
+  if (!permission) return <View />;
+
+  if (!permission.granted) {
+    return (
+      <View style={[styles.placeHolder, { width: width, height: width }]}>
+        <Text>No access to camera</Text>
+        <Button title="Request Permissions" onPress={requestPermission} />
+      </View>
+    );
+  }
+
   return (
-    <CameraView
-      style={[styles.camera, { width: width, height: width }]}
-      facing={"back"}
-      ref={(ref) => {
-        setCamera(ref);
-      }}
-      ratio={"1:1"}
-      onCameraReady={() => setCameraReady(true)}
+    <View
+      style={[
+        {
+          flex: 1,
+          width: width,
+          height: width,
+          //   overflow: "hidden",
+        },
+      ]}
     >
-      <TouchableOpacity style={styles.button} onPress={takePicture}>
+      <CameraView
+        style={[
+          {
+            // flex: 1,
+            width: width,
+            height: width,
+          },
+        ]}
+        facing={"back"}
+        ref={(ref) => {
+          setCamera(ref);
+        }}
+        onCameraReady={() => setCameraReady(true)}
+        pictureSize={pictureSize}
+        zoom={0}
+        // animateShutter={false}
+      ></CameraView>
+      <TouchableOpacity
+        style={[
+          {
+            position: "absolute",
+            width: width,
+            height: width,
+            alignItems: "center",
+          },
+        ]}
+        onPress={takePicture}
+      >
         <View style={styles.placeHolder}></View>
         <View style={[styles.cropBox, { height: width * 0.8 }]}></View>
         <View style={styles.placeHolder}>
           <Text style={styles.text}>Click to scan</Text>
         </View>
       </TouchableOpacity>
-    </CameraView>
+    </View>
   );
 };
 
