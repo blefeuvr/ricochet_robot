@@ -29,7 +29,6 @@ const CameraPreview = ({ onTakePicture, onPictureSaved }) => {
         })
         .sort();
       setPictureSize(squareSizes[squareSizes.length - 1]);
-      console.log(squareSizes[squareSizes.length - 1]);
     };
     if (camera) {
         getPictureSize();

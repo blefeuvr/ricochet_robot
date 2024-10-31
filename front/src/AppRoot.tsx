@@ -1,9 +1,12 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-import { BoardReader } from './screens/BoardReader';
+import { StatusBar } from "expo-status-bar";
+import { StyleSheet, Text, View } from "react-native";
+import { BoardReader } from "./screens/BoardReader";
 
 export default function App() {
   return (
-    <BoardReader/>
+    <View style={{ flex: 1 }}>
+      <BoardReader />
+      <StatusBar translucent />
+    </View>
   );
 }
